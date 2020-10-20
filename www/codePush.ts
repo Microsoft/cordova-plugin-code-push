@@ -45,9 +45,27 @@ class CodePush implements CodePushCordovaPlugin {
      * @param notifySucceeded Optional callback invoked if the plugin was successfully notified.
      * @param notifyFailed Optional callback invoked in case of an error during notifying the plugin.
      */
+
     public notifyApplicationReady(notifySucceeded?: SuccessCallback<void>, notifyFailed?: ErrorCallback): void {
         cordova.exec(notifySucceeded, notifyFailed, "CodePush", "notifyApplicationReady", []);
     }
+
+    /**
+     * Do full update or diff update
+     * 0 = diff update
+     * 1 = full update
+     */
+
+    private UpdateType: Number = 0;
+    /**
+     * 
+     * @param type 
+     * Implement for full update prefence
+     */
+    public setUpdateType(type: Number): void {
+        this.UpdateType = type;
+    }
+
 
     /**
      * Reloads the application. If there is a pending update package installed using ON_NEXT_RESTART or ON_NEXT_RESUME modes, the update
@@ -62,14 +80,14 @@ class CodePush implements CodePushCordovaPlugin {
      * !!! This function is called from the native side, please make changes accordingly. !!!
      */
     public reportStatus(status: number, label: string, appVersion: string, deploymentKey: string, previousLabelOrAppVersion?: string, previousDeploymentKey?: string) {
-       if (((!label && appVersion === previousLabelOrAppVersion) || label === previousLabelOrAppVersion)
-           && deploymentKey === previousDeploymentKey) {
-           // No-op since the new appVersion and label is exactly the same as the previous
-           // (the app might have been updated via a direct or HockeyApp deployment).
-           return;
-       }
+        if (((!label && appVersion === previousLabelOrAppVersion) || label === previousLabelOrAppVersion)
+            && deploymentKey === previousDeploymentKey) {
+            // No-op since the new appVersion and label is exactly the same as the previous
+            // (the app might have been updated via a direct or HockeyApp deployment).
+            return;
+        }
 
-       var createPackageForReporting = (label: string, appVersion: string): IPackage => {
+        var createPackageForReporting = (label: string, appVersion: string): IPackage => {
             return {
                 /* The SDK only reports the label and appVersion.
                    The rest of the properties are added for type safety. */
@@ -198,7 +216,10 @@ class CodePush implements CodePushCordovaPlugin {
                         LocalPackage.getCurrentOrDefaultPackage((localPackage: LocalPackage) => {
                             NativeAppInfo.getApplicationVersion((appVersionError: Error, currentBinaryVersion: string) => {
                                 if (!appVersionError) {
-                                     localPackage.appVersion = currentBinaryVersion;
+                                    localPackage.appVersion = currentBinaryVersion;
+                                }
+                                if (this.UpdateType === 1) {
+                                    delete localPackage.label;
                                 }
                                 CodePushUtil.logMessage("Checking for update.");
                                 acquisitionManager.queryUpdateWithCurrentPackage(localPackage, callback);
