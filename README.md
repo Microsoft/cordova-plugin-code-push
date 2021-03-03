@@ -240,12 +240,12 @@ Additionally, the following objects and enums are also exposed globally as part 
 ### codePush.checkForUpdate
 
 ```javascript
-codePush.checkForUpdate(onSuccess, onError?, deploymentKey?: String);
+codePush.checkForUpdate(onSuccess, onError?, deploymentKey?, onBinaryUpdate?);
 ```
 
 Queries the CodePush service to see whether the configured app deployment has an update available. By default, it will use the deployment key that is configured in your `config.xml` file, but you can override that by specifying a value via the optional `deploymentKey` parameter. This can be useful when you want to dynamically "redirect" a user to a specific deployment, such as allowing "Early access" via an easter egg or a user setting switch.
 
-When the update check completes, it will trigger the `onUpdateCheck` callback with one of two possible values:
+When the update check completes, it will trigger the `onSuccess` callback with one of two possible values:
 
 1. `null` if there is no update available. This occurs in the following scenarios:
 
@@ -276,6 +276,8 @@ codePush.checkForUpdate(function (update) {
     }
 });
 ```
+
+- __onBinaryUpdate__: Optional callback that is invoked when there is an update available that is targeting a newer binary version than you are currently running.
 
 ### codePush.getCurrentPackage
 
@@ -381,7 +383,7 @@ Immediately restarts the app. This method is for advanced scenarios, and is prim
 ### codePush.sync
 
 ```javascript
-codePush.sync(syncCallback?, syncOptions?, downloadProgress?, syncErrback?);
+codePush.sync(syncCallback?, syncOptions?, downloadProgress?, syncErrback?, onBinaryUpdate?);
 ```
 
 Synchronizes your app's code and images with the latest release to the configured deployment. Unlike the `checkForUpdate` method, which simply checks for the presence of an update, and let's you control what to do next, `sync` handles the update check, download and installation experience for you.
@@ -419,6 +421,10 @@ While the sync method tries to make it easy to perform silent and active updates
     - __totalBytes__ *(Number)* - The total number of bytes expected to be received for this update (i.e. the size of the set of files which changed from the previous release).
 
     - __receivedBytes__ *(Number)* - The number of bytes downloaded thus far, which can be used to track download progress.
+
+- __syncErrback__: Optional callback that is invoked in the event of an error. The callback takes one error parameter, containing the details of the error.
+
+- __onBinaryUpdate__: Optional callback that is invoked when there is an update available that is targeting a newer binary version than you are currently running.
 
 #### SyncOptions
 

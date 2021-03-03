@@ -263,8 +263,9 @@ interface CodePushCordovaPlugin {
      *                     A null package means the application is up to date for the current native application version.
      * @param queryError Optional callback invoked in case of an error.
      * @param deploymentKey Optional deployment key that overrides the config.xml setting.
+     * @param binaryUpdateCallback Optional callback invoked when there is an update available, but it is targeting a newer binary version than you are currently running.
      */
-    checkForUpdate(querySuccess: SuccessCallback<IRemotePackage>, queryError?: ErrorCallback, deploymentKey?: string): void;
+    checkForUpdate(querySuccess: SuccessCallback<IRemotePackage>, queryError?: ErrorCallback, deploymentKey?: string, binaryUpdateCallback?: SuccessCallback<NativeUpdateNotification>): void;
 
     /**
      * Notifies the plugin that the update operation succeeded and that the application is ready.
@@ -301,9 +302,10 @@ interface CodePushCordovaPlugin {
      *                     The callback will be called only once, and the possible statuses are defined by the SyncStatus enum.
      * @param syncOptions Optional SyncOptions parameter configuring the behavior of the sync operation.
      * @param downloadProgress Optional callback invoked during the download process. It is called several times with one DownloadProgress parameter.
-     *
+     * @param syncErrback Optional errback invoked if an error occurs. The callback will be called only once
+     * @param binaryUpdateCallback Optional callback invoked when there is an update available, but it is targeting a newer binary version than you are currently running.
      */
-    sync(syncCallback?: SuccessCallback<SyncStatus>, syncOptions?: SyncOptions, downloadProgress?: SuccessCallback<DownloadProgress>): void;
+    sync(syncCallback?: SuccessCallback<SyncStatus>, syncOptions?: SyncOptions, downloadProgress?: SuccessCallback<DownloadProgress>, syncErrback?: ErrorCallback, binaryUpdateCallback?: SuccessCallback<NativeUpdateNotification>): void;
 }
 
 /**

@@ -82,7 +82,7 @@ var CodePush = (function () {
             }
         });
     };
-    CodePush.prototype.checkForUpdate = function (querySuccess, queryError, deploymentKey) {
+    CodePush.prototype.checkForUpdate = function (querySuccess, queryError, deploymentKey, binaryUpdateCallback) {
         try {
             var callback = function (error, remotePackageOrUpdateNotification) {
                 if (error) {
@@ -96,6 +96,7 @@ var CodePush = (function () {
                     if (remotePackageOrUpdateNotification) {
                         if (remotePackageOrUpdateNotification.updateAppVersion) {
                             CodePushUtil.logMessage("An update is available, but it is targeting a newer binary version than you are currently running.");
+                            binaryUpdateCallback && binaryUpdateCallback(remotePackageOrUpdateNotification);
                             appUpToDate();
                         }
                         else {
@@ -160,7 +161,7 @@ var CodePush = (function () {
             CodePushUtil.invokeErrorCallback(new Error("An error occurred while querying for updates." + CodePushUtil.getErrorMessage(e)), queryError);
         }
     };
-    CodePush.prototype.sync = function (syncCallback, syncOptions, downloadProgress, syncErrback) {
+    CodePush.prototype.sync = function (syncCallback, syncOptions, downloadProgress, syncErrback, binaryUpdateCallback) {
         if (CodePush.SyncInProgress) {
             CodePushUtil.logMessage("Sync already in progress.");
             syncCallback && syncCallback(SyncStatus.IN_PROGRESS);
@@ -183,10 +184,10 @@ var CodePush = (function () {
                 syncCallback && syncCallback(result);
             };
             CodePush.SyncInProgress = true;
-            this.syncInternal(syncCallbackAndUpdateSyncInProgress, syncOptions, downloadProgress);
+            this.syncInternal(syncCallbackAndUpdateSyncInProgress, syncOptions, downloadProgress, binaryUpdateCallback);
         }
     };
-    CodePush.prototype.syncInternal = function (syncCallback, syncOptions, downloadProgress) {
+    CodePush.prototype.syncInternal = function (syncCallback, syncOptions, downloadProgress, onBinaryUpdate) {
         if (!syncOptions) {
             syncOptions = this.getDefaultSyncOptions();
         }
@@ -276,7 +277,7 @@ var CodePush = (function () {
             }
         };
         syncCallback && syncCallback(null, SyncStatus.CHECKING_FOR_UPDATE);
-        window.codePush.checkForUpdate(onUpdate, onError, syncOptions.deploymentKey);
+        window.codePush.checkForUpdate(onUpdate, onError, syncOptions.deploymentKey, onBinaryUpdate);
     };
     CodePush.prototype.getDefaultSyncOptions = function () {
         if (!CodePush.DefaultSyncOptions) {

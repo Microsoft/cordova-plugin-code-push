@@ -147,8 +147,9 @@ class CodePush implements CodePushCordovaPlugin {
      *                     A null package means the application is up to date for the current native application version.
      * @param queryError Optional callback invoked in case of an error.
      * @param deploymentKey Optional deployment key that overrides the config.xml setting.
+     * @param binaryUpdateCallback Optional callback invoked when there is an update available that is targeting a newer binary version than you are currently running.
      */
-    public checkForUpdate(querySuccess: SuccessCallback<RemotePackage>, queryError?: ErrorCallback, deploymentKey?: string): void {
+    public checkForUpdate(querySuccess: SuccessCallback<RemotePackage>, queryError?: ErrorCallback, deploymentKey?: string, binaryUpdateCallback?: SuccessCallback<NativeUpdateNotification>): void {
         try {
             var callback: Callback<RemotePackage | NativeUpdateNotification> = (error: Error, remotePackageOrUpdateNotification: IRemotePackage | NativeUpdateNotification) => {
                 if (error) {
@@ -162,8 +163,9 @@ class CodePush implements CodePushCordovaPlugin {
 
                     if (remotePackageOrUpdateNotification) {
                         if ((<NativeUpdateNotification>remotePackageOrUpdateNotification).updateAppVersion) {
-                            /* There is an update available for a different version. In the current version of the plugin, we treat that as no update. */
+                            /* There is an update available for a different version. */
                             CodePushUtil.logMessage("An update is available, but it is targeting a newer binary version than you are currently running.");
+                            binaryUpdateCallback && binaryUpdateCallback(<NativeUpdateNotification>remotePackageOrUpdateNotification);
                             appUpToDate();
                         } else {
                             /* There is an update available for the current version. */
@@ -248,9 +250,9 @@ class CodePush implements CodePushCordovaPlugin {
      * @param syncOptions Optional SyncOptions parameter configuring the behavior of the sync operation.
      * @param downloadProgress Optional callback invoked during the download process. It is called several times with one DownloadProgress parameter.
      * @param syncErrback Optional errback invoked if an error occurs. The callback will be called only once
-     *
+     * @param binaryUpdateCallback Optional callback invoked when there is an update available that is targeting a newer binary version than you are currently running.
      */
-    public sync(syncCallback?: SuccessCallback<any>, syncOptions?: SyncOptions, downloadProgress?: SuccessCallback<DownloadProgress>, syncErrback?: ErrorCallback): void {
+    public sync(syncCallback?: SuccessCallback<any>, syncOptions?: SyncOptions, downloadProgress?: SuccessCallback<DownloadProgress>, syncErrback?: ErrorCallback, binaryUpdateCallback?: SuccessCallback<NativeUpdateNotification>): void {
         /* Check if a sync is already in progress */
         if (CodePush.SyncInProgress) {
             /* A sync is already in progress */
@@ -285,7 +287,7 @@ class CodePush implements CodePushCordovaPlugin {
 
             /* Begin the sync */
             CodePush.SyncInProgress = true;
-            this.syncInternal(syncCallbackAndUpdateSyncInProgress, syncOptions, downloadProgress);
+            this.syncInternal(syncCallbackAndUpdateSyncInProgress, syncOptions, downloadProgress, binaryUpdateCallback);
         }
     }
 
@@ -299,9 +301,9 @@ class CodePush implements CodePushCordovaPlugin {
      *                     The callback will be called only once, and the possible statuses are defined by the SyncStatus enum.
      * @param syncOptions Optional SyncOptions parameter configuring the behavior of the sync operation.
      * @param downloadProgress Optional callback invoked during the download process. It is called several times with one DownloadProgress parameter.
-     *
+     * @param onBinaryUpdate Optional callback invoked when there is an update available, but it is targeting a newer binary version than you are currently running.
      */
-    private syncInternal(syncCallback?: Callback<any>, syncOptions?: SyncOptions, downloadProgress?: SuccessCallback<DownloadProgress>): void {
+    private syncInternal(syncCallback?: Callback<any>, syncOptions?: SyncOptions, downloadProgress?: SuccessCallback<DownloadProgress>, onBinaryUpdate?: SuccessCallback<NativeUpdateNotification>): void {
 
         /* No options were specified, use default */
         if (!syncOptions) {
@@ -410,7 +412,7 @@ class CodePush implements CodePushCordovaPlugin {
         };
 
         syncCallback && syncCallback(null, SyncStatus.CHECKING_FOR_UPDATE);
-        window.codePush.checkForUpdate(onUpdate, onError, syncOptions.deploymentKey);
+        window.codePush.checkForUpdate(onUpdate, onError, syncOptions.deploymentKey, onBinaryUpdate);
     }
 
     /**
